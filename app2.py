@@ -41,7 +41,7 @@ def read_json_as_dataframe(service_client, filesystem_name, file_path):
 
 # Definir a chave de acesso diretamente no código
 account_name = "datalakebikestore"  # Nome da conta do Azure Storage
-account_key = "gdrO0Er/Ec8TslO1M7d9ENURLu4p9wov4GL7WrsCWP/Iwxca9I0amu1m1QIOTS57JcMeoZD4rrNA+AStGvOJJw=="  # Sua chave de acesso
+account_key = ""  # Sua chave de acesso
 
 # Conectar ao Azure Data Lake
 service_client = connect_to_datalake(account_name, account_key)
