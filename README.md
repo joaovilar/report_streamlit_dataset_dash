@@ -6,17 +6,17 @@ Streamlit dashboard for data analysis and visualization
 
 python -m venv .venv
 
-3. ativar o ambiente criado:
+3. - ativar o ambiente criado:
 
 .\.venv\Scripts\activate
 
 para listar e ver as bibliotecas pode usar: pip list
 
-4. instalar as bibliotecas necessárias, caso já nçao tenha:
+4. - instalar as bibliotecas necessárias, caso já não tenha:
 
 pandas, plotly, streamlit
 
-5. depois de iniciado a criação e quiser executar:
+5. - depois de iniciado a criação e quiser executar:
 streamlit nome_do_aplicativo.py
 
 
