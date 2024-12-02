@@ -18,3 +18,6 @@ pandas, plotly, streamlit
 
 5º depois de iniciado a criação e quiser executar:
 streamlit nome_do_aplicativo.py
+
+
+![image](https://github.com/user-attachments/assets/6cdddc18-ec02-47fb-9159-6b324ff827e9)
