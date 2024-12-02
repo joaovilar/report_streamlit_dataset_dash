@@ -17,4 +17,4 @@ para listar e ver as bibliotecas pode usar: pip list
 pandas, plotly, streamlit
 
 5º depois de iniciado a criação e quiser executar:
-python .\app.py
+streamlit nome_do_aplicativo.py
