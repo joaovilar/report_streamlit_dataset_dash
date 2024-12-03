@@ -8,7 +8,7 @@ from css import css
 import plotly.express as px
 
 # Configuração de layout para deixar renderizado
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Report", layout="wide")
 
 # Adicionando a imagem de logo
 logo_path = "image-vilar.png"
@@ -76,14 +76,17 @@ if service_client:
             # Título da página
             st.markdown('<div class="title">Relatório de Informações da ANAC</div>', unsafe_allow_html=True)
 
-            # Filtros
-            st.sidebar.title('Filtros')
-            
+            # Sidebar para os filtros
+            st.sidebar.header("Filtros")
+
+            # Filtros dentro da barra lateral
+            # Filtro de Operador Padronizado
             if 'Operador_Padronizado' in df.columns:
                 filtro_operador = st.sidebar.multiselect('Operadores', df['Operador_Padronizado'].unique())
             else:
                 filtro_operador = []
 
+            # Filtro de UF
             if 'UF' in df.columns:
                 filtro_uf = st.sidebar.multiselect('Unidade Federativa (UF)', df['UF'].unique())
             else:
@@ -95,6 +98,7 @@ if service_client:
             else:
                 filtro_fabricante = []
 
+            # Filtro de intervalo de datas
             min_date, max_date = df['Data_da_Ocorrencia'].min().date(), df['Data_da_Ocorrencia'].max().date()
             date_range = st.sidebar.date_input(
                 'Selecione o intervalo de datas de ocorrência',
@@ -103,6 +107,15 @@ if service_client:
                 max_value=max_date
             )
 
+            # Expander para seleção de colunas
+            st.sidebar.header("Configurações de Exibição")
+            with st.sidebar.expander("Selecione as colunas a serem exibidas"):
+                colunas_selecionadas = st.multiselect(
+                    "Escolha as colunas:",
+                    options=df.columns.tolist(),
+                    default=df.columns.tolist()
+                )
+
             # Aplicar os filtros de forma otimizada
             filtered_df = df[
                 (df['Operador_Padronizado'].isin(filtro_operador) if filtro_operador else True) &
@@ -110,6 +123,9 @@ if service_client:
                 (df['Nome_do_Fabricante'].isin(filtro_fabricante) if filtro_fabricante else True) &
                 (df['Data_da_Ocorrencia'].between(pd.Timestamp(date_range[0]), pd.Timestamp(date_range[1])))
             ]
+
+            # Aplicar a seleção de colunas
+            filtered_df = filtered_df[colunas_selecionadas]
 
             # Dividir em abas
             aba1, aba2 = st.tabs(['Dataset', 'Dashboard'])
@@ -128,8 +144,6 @@ if service_client:
 
                 if total_rows:
                     st.write(f"Exibindo registros {start_idx + 1} a {end_idx} de {total_rows}")
-                    
-                    # Exibir a tabela com uma altura maior
                     st.dataframe(filtered_df.iloc[start_idx:end_idx].reset_index(drop=True), 
                                  use_container_width=True, height=600)
                 else:
