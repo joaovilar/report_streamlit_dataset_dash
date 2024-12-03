@@ -43,6 +43,16 @@ df_qtd_ano['Mês'] = df_qtd_ano['Mês_num'].apply(lambda x: pd.Timestamp(f'2021-
 df_qtd_ano = df_qtd_ano.sort_values(['Ano', 'Mês_num'])
 
 
+# Criando o DataFrame para o gráfico de pizza
+df_pizza = df.groupby('Classificacao_da_Ocorrência')['Numero_da_Ocorrencia'].count().reset_index()
+df_pizza = df_pizza.rename(columns={'Numero_da_Ocorrencia': 'Quantidade'})
+df_pizza = df_pizza.sort_values('Quantidade', ascending=False)
 
+tabela_agrupada_operacao = (
+        df.groupby('Operacao')
+        .size()
+        .reset_index(name='Quantidade')
+        .sort_values(by='Quantidade', ascending=True)
+    )
 
 

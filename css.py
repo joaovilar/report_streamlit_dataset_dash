@@ -38,5 +38,14 @@ css = """
         .plotly-graph-div {
             margin-top: 30px;
         }
+
+        /* Estilo para o cartão de métricas */
+        .stMetric {
+            border: 1px solid #054f77; /* Cor e largura da borda */
+            border-radius: 15px; /* Cantos arredondados */
+            padding: 10px; /* Espaçamento interno */
+            margin: 10px; /* Espaçamento externo */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+        }
     </style>
 """

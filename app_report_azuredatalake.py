@@ -3,7 +3,7 @@ from utils import format_number
 import pandas as pd
 from azure.storage.filedatalake import DataLakeServiceClient
 import io
-from graphic import grafico_barra_uf, grafico_qtd_mensal
+from graphic import grafico_barra_uf, grafico_qtd_mensal, grafico_pizza, grafico_barra_operacao
 from css import css 
 import plotly.express as px
 
@@ -16,6 +16,7 @@ st.image(logo_path, width=80, caption="Tecnologia")
 
 
 # Função para conectar ao Data Lake
+@st.cache_data
 def connect_to_datalake(account_name, account_key):
     try:
         service_client = DataLakeServiceClient(
@@ -88,6 +89,12 @@ if service_client:
             else:
                 filtro_uf = []
 
+            # Filtro de Nome do Fabricante
+            if 'Nome_do_Fabricante' in df.columns:
+                filtro_fabricante = st.sidebar.multiselect('Nome do Fabricante', df['Nome_do_Fabricante'].unique())
+            else:
+                filtro_fabricante = []
+
             min_date, max_date = df['Data_da_Ocorrencia'].min().date(), df['Data_da_Ocorrencia'].max().date()
             date_range = st.sidebar.date_input(
                 'Selecione o intervalo de datas de ocorrência',
@@ -100,23 +107,9 @@ if service_client:
             filtered_df = df[
                 (df['Operador_Padronizado'].isin(filtro_operador) if filtro_operador else True) &
                 (df['UF'].isin(filtro_uf) if filtro_uf else True) &
+                (df['Nome_do_Fabricante'].isin(filtro_fabricante) if filtro_fabricante else True) &
                 (df['Data_da_Ocorrencia'].between(pd.Timestamp(date_range[0]), pd.Timestamp(date_range[1])))
             ]
-
-            # Criando o gráfico com os dados filtrados
-            grafico_data = filtered_df.groupby('UF').size().reset_index(name='Quantidade')
-
-            # Criando o gráfico de barras
-            grafico_barra_uf = px.bar(
-                grafico_data,
-                x='UF',
-                y='Quantidade',
-                title="Quantidade de Ocorrências por UF",
-                labels={"Quantidade": "Número de Ocorrências", "UF": "Estado (UF)"},
-                template="plotly",
-                width=1000,
-                height=500
-            )
 
             # Dividir em abas
             aba1, aba2 = st.tabs(['Dataset', 'Dashboard'])
@@ -135,17 +128,28 @@ if service_client:
 
                 if total_rows:
                     st.write(f"Exibindo registros {start_idx + 1} a {end_idx} de {total_rows}")
-                    st.dataframe(filtered_df.iloc[start_idx:end_idx].reset_index(drop=True), use_container_width=True)
+                    
+                    # Exibir a tabela com uma altura maior
+                    st.dataframe(filtered_df.iloc[start_idx:end_idx].reset_index(drop=True), 
+                                 use_container_width=True, height=600)
                 else:
                     st.warning("Nenhum dado disponível após aplicar os filtros.")
-
 
             # Aba para Dashboard
             with aba2:
                 st.markdown("<h2>Dashboard</h2>", unsafe_allow_html=True)
                 st.metric("Quantidade de Ocorrências", format_number(len(filtered_df), prefix=""))
                 st.plotly_chart(grafico_barra_uf, use_container_width=True)
-                st.plotly_chart(grafico_qtd_mensal,use_container_width=True)
+                st.plotly_chart(grafico_qtd_mensal, use_container_width=True)
+
+                # Dividindo em duas colunas
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.plotly_chart(grafico_pizza, use_container_width=True)
+
+                with col2:
+                    st.plotly_chart(grafico_barra_operacao, use_container_width=True)
 
         else:
             st.error("Não foi possível processar os dados do arquivo.")
