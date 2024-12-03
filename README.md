@@ -20,7 +20,10 @@ pandas, plotly, streamlit
 streamlit nome_do_aplicativo.py
 
 
-![image](https://github.com/user-attachments/assets/25e92973-3de6-497e-814e-a9b72b36fa5e)
+![image](https://github.com/user-attachments/assets/589d477c-d05b-44f2-8d4e-27937b056338)
 
 
 ![image](https://github.com/user-attachments/assets/4288d3cd-6bd4-41f3-a343-14e2e1288330)
+
+
+![image](https://github.com/user-attachments/assets/e222c909-b21a-4646-ac7b-2af9c36cf450)
