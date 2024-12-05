@@ -2,17 +2,7 @@ from dataset import df
 import pandas as pd
 
 def format_number(value, prefix=''):
-    # Se o valor for menor que mil, formata com 2 casas decimais
-    if value < 1000:
-        return f'{prefix} {value:,.2f}'.replace(',', '.')
-    
-    # Para valores acima de mil, divide e formata conforme a unidade
-    for unit in ['', 'mil', 'milhão', 'bilhão']:
-        if value < 1000:
-            return f'{prefix} {value:,.2f} {unit}'.replace(',', '.')
-        value /= 1000
-    
-    return f'{prefix} {value:,.2f} bilhões'.replace(',', '.')
+    return f'{prefix} {value:,}'.replace(',', '.')
 
 # Garantir que a coluna 'Data_da_Ocorrencia' esteja no formato datetime
 df['Data_da_Ocorrencia'] = pd.to_datetime(df['Data_da_Ocorrencia'], errors='coerce')

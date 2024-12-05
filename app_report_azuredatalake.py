@@ -3,17 +3,16 @@ from utils import format_number
 import pandas as pd
 from azure.storage.filedatalake import DataLakeServiceClient
 import io
-from graphic import grafico_barra_uf, grafico_qtd_mensal, grafico_pizza, grafico_barra_operacao
-from css import css 
+from graphic import create_graphics  # Ajustei para consolidar os gráficos em uma função
+from css import css
 import plotly.express as px
 
-# Configuração de layout para deixar renderizado
+# Configuração de layout
 st.set_page_config(page_title="Report", layout="wide")
 
 # Adicionando a imagem de logo
 logo_path = "image-vilar.png"
 st.image(logo_path, width=80, caption="Tecnologia")
-
 
 # Função para conectar ao Data Lake
 @st.cache_data
@@ -48,7 +47,6 @@ def read_and_process_json(_service_client, filesystem_name, file_path):
         download = file_client.download_file()
         file_content = download.readall()
         
-        # Carregar e processar o DataFrame
         data = pd.read_json(io.BytesIO(file_content), convert_dates=False)
         data['Data_da_Ocorrencia'] = pd.to_datetime(data['Data_da_Ocorrencia'], errors='coerce')
         return data.dropna(subset=['Data_da_Ocorrencia'])
@@ -70,33 +68,20 @@ if service_client:
     if file_name in file_list:
         df = read_and_process_json(service_client, filesystem_name, file_name)
         if df is not None:
-            # Aplicando o CSS importado
             st.markdown(css, unsafe_allow_html=True)
-
-            # Título da página
             st.markdown('<div class="title">Relatório de Informações da ANAC</div>', unsafe_allow_html=True)
 
             # Sidebar para os filtros
             st.sidebar.header("Filtros")
 
-            # Filtros dentro da barra lateral
             # Filtro de Operador Padronizado
-            if 'Operador_Padronizado' in df.columns:
-                filtro_operador = st.sidebar.multiselect('Operadores', df['Operador_Padronizado'].unique())
-            else:
-                filtro_operador = []
+            filtro_operador = st.sidebar.multiselect('Operadores', df['Operador_Padronizado'].unique())
 
             # Filtro de UF
-            if 'UF' in df.columns:
-                filtro_uf = st.sidebar.multiselect('Unidade Federativa (UF)', df['UF'].unique())
-            else:
-                filtro_uf = []
+            filtro_uf = st.sidebar.multiselect('Unidade Federativa (UF)', df['UF'].unique())
 
             # Filtro de Nome do Fabricante
-            if 'Nome_do_Fabricante' in df.columns:
-                filtro_fabricante = st.sidebar.multiselect('Nome do Fabricante', df['Nome_do_Fabricante'].unique())
-            else:
-                filtro_fabricante = []
+            filtro_fabricante = st.sidebar.multiselect('Nome do Fabricante', df['Nome_do_Fabricante'].unique())
 
             # Filtro de intervalo de datas
             min_date, max_date = df['Data_da_Ocorrencia'].min().date(), df['Data_da_Ocorrencia'].max().date()
@@ -107,25 +92,13 @@ if service_client:
                 max_value=max_date
             )
 
-            # Expander para seleção de colunas
-            st.sidebar.header("Configurações de Exibição")
-            with st.sidebar.expander("Selecione as colunas a serem exibidas"):
-                colunas_selecionadas = st.multiselect(
-                    "Escolha as colunas:",
-                    options=df.columns.tolist(),
-                    default=df.columns.tolist()
-                )
-
-            # Aplicar os filtros de forma otimizada
+            # Filtros aplicados ao DataFrame
             filtered_df = df[
                 (df['Operador_Padronizado'].isin(filtro_operador) if filtro_operador else True) &
                 (df['UF'].isin(filtro_uf) if filtro_uf else True) &
                 (df['Nome_do_Fabricante'].isin(filtro_fabricante) if filtro_fabricante else True) &
                 (df['Data_da_Ocorrencia'].between(pd.Timestamp(date_range[0]), pd.Timestamp(date_range[1])))
             ]
-
-            # Aplicar a seleção de colunas
-            filtered_df = filtered_df[colunas_selecionadas]
 
             # Dividir em abas
             aba1, aba2 = st.tabs(['Dataset', 'Dashboard'])
@@ -144,8 +117,16 @@ if service_client:
 
                 if total_rows:
                     st.write(f"Exibindo registros {start_idx + 1} a {end_idx} de {total_rows}")
-                    st.dataframe(filtered_df.iloc[start_idx:end_idx].reset_index(drop=True), 
+
+                    # Sidebar para selecionar colunas a exibir
+                    selected_columns = st.sidebar.multiselect(
+                        'Selecione as colunas para exibir', df.columns.tolist(), default=df.columns.tolist()
+                    )
+
+                    # Exibir o DataFrame com as colunas selecionadas
+                    st.dataframe(filtered_df[selected_columns].iloc[start_idx:end_idx].reset_index(drop=True), 
                                  use_container_width=True, height=600)
+
                 else:
                     st.warning("Nenhum dado disponível após aplicar os filtros.")
 
@@ -153,17 +134,9 @@ if service_client:
             with aba2:
                 st.markdown("<h2>Dashboard</h2>", unsafe_allow_html=True)
                 st.metric("Quantidade de Ocorrências", format_number(len(filtered_df), prefix=""))
-                st.plotly_chart(grafico_barra_uf, use_container_width=True)
-                st.plotly_chart(grafico_qtd_mensal, use_container_width=True)
-
-                # Dividindo em duas colunas
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    st.plotly_chart(grafico_pizza, use_container_width=True)
-
-                with col2:
-                    st.plotly_chart(grafico_barra_operacao, use_container_width=True)
+               
+                # Chamando a função create_graphics para os outros gráficos
+                create_graphics(filtered_df)
 
         else:
             st.error("Não foi possível processar os dados do arquivo.")

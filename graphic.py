@@ -1,65 +1,60 @@
 import plotly.express as px
 import pandas as pd
-from utils import df_qt_ocorrencia_uf, format_number, df_qtd_ano, df_pizza, tabela_agrupada_operacao  # Importando os dados do utils
+import streamlit as st
 
-# Ordenando o DataFrame antes de passar para o gráfico (ordem crescente de 'Numero_da_Ocorrencia')
-df_qt_ocorrencia_uf = df_qt_ocorrencia_uf.sort_values('Numero_da_Ocorrencia', ascending=False)
+def create_graphics(filtered_df):
+    # Verificar se 'Data_da_Ocorrencia' é um tipo de data e garantir que está em formato adequado
+    if 'Data_da_Ocorrencia' in filtered_df.columns:
+        # Garantir que a coluna 'Data_da_Ocorrencia' é de tipo datetime
+        filtered_df['Data_da_Ocorrencia'] = pd.to_datetime(filtered_df['Data_da_Ocorrencia'], errors='coerce')
+        
+        # Remover ou lidar com valores nulos, se houver
+        filtered_df = filtered_df.dropna(subset=['Data_da_Ocorrencia'])
 
-# Criando o gráfico de barras para quantidade de ocorrências por UF
-grafico_barra_uf = px.bar(
-    df_qt_ocorrencia_uf,
-    x='UF',  # Coluna de estados (UF)
-    y='Numero_da_Ocorrencia',  # Coluna de número de ocorrências
-    hover_name='UF',  # Exibirá a UF quando passar o mouse sobre a barra
-    title="Quantidade de Ocorrências por UF",
-    labels={"Numero_da_Ocorrencia": "Número de Ocorrências", "UF": "Estado (UF)"},
-    template="plotly",  # Escolha o template do gráfico
-)
+        # Gráfico de barras para quantidade de ocorrências por UF
+        grafico_barra_uf = px.bar(
+            filtered_df.groupby('UF').size().reset_index(name='Numero_da_Ocorrencia'),
+            x='UF',
+            y='Numero_da_Ocorrencia',
+            title="Quantidade de Ocorrências por UF"
+        )
+        st.plotly_chart(grafico_barra_uf, use_container_width=True)
 
-# Garantir a ordem correta dos meses
-df_qtd_ano['Mês_Ordenado'] = pd.Categorical(
-    df_qtd_ano['Mês'], 
-    categories=[
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ], 
-    ordered=True
-)
+        # Gráfico de linhas para quantidade de ocorrências mensal
+        # Verificando se 'Data_da_Ocorrencia' está no formato datetime
+        df_mensal = filtered_df.groupby(filtered_df['Data_da_Ocorrencia'].dt.to_period('M')).size().reset_index(name='Ocorrências')
+        
+        # Garantir que a coluna 'Data_da_Ocorrencia' está como string ou datetime após o groupby
+        df_mensal['Data_da_Ocorrencia'] = df_mensal['Data_da_Ocorrencia'].astype(str)  # Garantindo compatibilidade com Plotly
 
-# Agrupando os dados por mês e somando as ocorrências
-df_qtd_mensal_agrupado = (
-    df_qtd_ano.groupby('Mês_Ordenado', as_index=False)['Numero_da_Ocorrencia']
-    .sum()
-    .sort_values('Mês_Ordenado')  # Ordenando os meses pela coluna 'Mês_Ordenado'
-)
+        grafico_qtd_mensal = px.line(
+            df_mensal,
+            x='Data_da_Ocorrencia',
+            y='Ocorrências',
+            title='Quantidade de Ocorrências Mensal (Totalizado)'
+        )
+        st.plotly_chart(grafico_qtd_mensal, use_container_width=True)
 
-# Criar o gráfico de linhas para a quantidade de ocorrências mensal (totalizado)
-grafico_qtd_mensal = px.line(
-    df_qtd_mensal_agrupado,  # DataFrame agrupado e ordenado
-    x='Mês_Ordenado',
-    y='Numero_da_Ocorrencia',
-    markers=True,
-    title='Quantidade de Ocorrências Mensal (Totalizado)'
-)
+        # Gráfico de pizza para distribuição por classificação
+        grafico_pizza = px.pie(
+            filtered_df.groupby('Classificacao_da_Ocorrência').size().reset_index(name='Quantidade'),
+            names='Classificacao_da_Ocorrência',
+            values='Quantidade',
+            title='Distribuição de Ocorrências por Classificação'
+        )
+        st.plotly_chart(grafico_pizza, use_container_width=True)
 
-# Gráfico de pizza para distribuição de ocorrências por classificação
-grafico_pizza = px.pie(
-    df_pizza,
-    names='Classificacao_da_Ocorrência',
-    values='Quantidade',
-    title='Distribuição de Ocorrências por Classificação',
-    color_discrete_sequence=px.colors.sequential.RdBu  # Paleta de cores
-)
+        # Gráfico de barras horizontal para operações
+        grafico_barra_operacao = px.bar(
+            filtered_df.groupby('Operacao').size().reset_index(name='Quantidade'),
+            y='Operacao',
+            x='Quantidade',
+            orientation='h',
+            title='Quantidade de Ocorrências por Operação'
+        )
+        st.plotly_chart(grafico_barra_operacao, use_container_width=True)
 
-# Criando o gráfico de barras horizontal para operações
-grafico_barra_operacao = px.bar(
-    tabela_agrupada_operacao,  # DataFrame da tabela agrupada
-    y='Operacao',  # Operação no eixo Y
-    x='Quantidade',  # Quantidade no eixo X
-    orientation='h',  # Orientação horizontal
-    title='Quantidade de Ocorrências por Operação',
-    labels={"Operacao": "Operação", "Quantidade": "Número de Ocorrências"},
-    template="plotly",  # Template padrão
-    color='Quantidade',  # Adicionando cor com base na quantidade
-    color_continuous_scale=px.colors.sequential.Viridis  # Escala de cores
-)
+# Exemplo de como o código pode ser usado (substitua 'filtered_df' pelo seu DataFrame real)
+if __name__ == "__main__":
+    # Supondo que você já tenha o DataFrame 'filtered_df' disponível com os dados processados
+    create_graphics(filtered_df)
