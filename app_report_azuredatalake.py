@@ -1,11 +1,10 @@
 import streamlit as st
-from utils import format_number
 import pandas as pd
 from azure.storage.filedatalake import DataLakeServiceClient
 import io
+from utils import format_number
 from graphic import create_graphics  # Ajustei para consolidar os gráficos em uma função
 from css import css
-import plotly.express as px
 
 # Configuração de layout
 st.set_page_config(page_title="Report", layout="wide")
@@ -118,10 +117,13 @@ if service_client:
                 if total_rows:
                     st.write(f"Exibindo registros {start_idx + 1} a {end_idx} de {total_rows}")
 
-                    # Sidebar para selecionar colunas a exibir
+                    # Exibindo o shape do DataFrame com as colunas selecionadas
                     selected_columns = st.sidebar.multiselect(
                         'Selecione as colunas para exibir', df.columns.tolist(), default=df.columns.tolist()
                     )
+
+                    # Exibindo o shape do DataFrame com as colunas selecionadas
+                    st.markdown(f"A tabela :blue[{filtered_df.shape[0]}] linhas e :blue[{len(selected_columns)}] colunas selecionadas", unsafe_allow_html=True)
 
                     # Exibir o DataFrame com as colunas selecionadas
                     st.dataframe(filtered_df[selected_columns].iloc[start_idx:end_idx].reset_index(drop=True), 
